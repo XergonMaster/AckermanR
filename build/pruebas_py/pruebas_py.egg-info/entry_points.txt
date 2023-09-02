@@ -1,0 +1,3 @@
+[console_scripts]
+plotter_distancias = pruebas_py.plotter_distancias:main
+

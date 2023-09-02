@@ -1,0 +1,24 @@
+[0.912s] Invoking command in '/home/santiago/RoboticaMovil/ros_ws_2302/src/build/pruebas_py': PYTHONPATH=/home/santiago/RoboticaMovil/ros_ws_2302/src/build/pruebas_py/prefix_override:/home/santiago/RoboticaMovil/ros_ws_2302/src/install/pruebas_py/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py develop --editable --build-directory /home/santiago/RoboticaMovil/ros_ws_2302/src/build/pruebas_py/build --no-deps install_data
+[1.278s] running develop
+[1.535s] running egg_info
+[1.536s] creating pruebas_py.egg-info
+[1.536s] writing pruebas_py.egg-info/PKG-INFO
+[1.536s] writing dependency_links to pruebas_py.egg-info/dependency_links.txt
+[1.536s] writing entry points to pruebas_py.egg-info/entry_points.txt
+[1.536s] writing requirements to pruebas_py.egg-info/requires.txt
+[1.536s] writing top-level names to pruebas_py.egg-info/top_level.txt
+[1.536s] writing manifest file 'pruebas_py.egg-info/SOURCES.txt'
+[1.538s] reading manifest file 'pruebas_py.egg-info/SOURCES.txt'
+[1.538s] writing manifest file 'pruebas_py.egg-info/SOURCES.txt'
+[1.540s] running build_ext
+[1.540s] Creating /home/santiago/RoboticaMovil/ros_ws_2302/src/install/pruebas_py/lib/python3.10/site-packages/pruebas-py.egg-link (link to .)
+[1.540s] Installing plotter_distancias script to /home/santiago/RoboticaMovil/ros_ws_2302/src/install/pruebas_py/lib/pruebas_py
+[1.541s] 
+[1.541s] Installed /home/santiago/RoboticaMovil/ros_ws_2302/src/build/pruebas_py
+[1.541s] running install_data
+[1.541s] creating /home/santiago/RoboticaMovil/ros_ws_2302/src/install/pruebas_py/share/ament_index
+[1.541s] creating /home/santiago/RoboticaMovil/ros_ws_2302/src/install/pruebas_py/share/ament_index/resource_index
+[1.541s] creating /home/santiago/RoboticaMovil/ros_ws_2302/src/install/pruebas_py/share/ament_index/resource_index/packages
+[1.541s] copying resource/pruebas_py -> /home/santiago/RoboticaMovil/ros_ws_2302/src/install/pruebas_py/share/ament_index/resource_index/packages
+[1.541s] copying package.xml -> /home/santiago/RoboticaMovil/ros_ws_2302/src/install/pruebas_py/share/pruebas_py
+[1.579s] Invoked command in '/home/santiago/RoboticaMovil/ros_ws_2302/src/build/pruebas_py' returned '0': PYTHONPATH=/home/santiago/RoboticaMovil/ros_ws_2302/src/build/pruebas_py/prefix_override:/home/santiago/RoboticaMovil/ros_ws_2302/src/install/pruebas_py/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py develop --editable --build-directory /home/santiago/RoboticaMovil/ros_ws_2302/src/build/pruebas_py/build --no-deps install_data
