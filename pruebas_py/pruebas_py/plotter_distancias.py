@@ -13,6 +13,14 @@ class ScanPlotter(Node):
             self.scan_callback,
             10  # Tamaño de la cola de mensajes
         )
+        
+        # Configura el gráfico inicial
+        self.fig, self.ax = plt.subplots(figsize=(8, 6))
+        self.ax.set_xlabel('Ángulo (radianes)')
+        self.ax.set_ylabel('Distancia (metros)')
+        self.ax.set_title('Escaneo láser')
+        plt.ion()  # Activa el modo interactivo
+        plt.show()
 
     def scan_callback(self, data):
         # Obtén los ángulos (radianes) del escaneo
@@ -20,16 +28,15 @@ class ScanPlotter(Node):
     
         # Obtén las distancias medidas
         distances = data.ranges
-
-        # Crea un gráfico de dispersión (scatter plot)
-        plt.figure(figsize=(8, 6))
-        plt.scatter(angles, distances, s=1)
-        plt.xlabel('Ángulo (radianes)')
-        plt.ylabel('Distancia (metros)')
-        plt.title('Escaneo láser')
-
-        # Muestra el gráfico
-        plt.show()
+        
+        # Limpia los datos anteriores y plotea los nuevos datos
+        self.ax.clear()
+        self.ax.scatter(angles, distances, s=1)
+        self.ax.set_xlabel('Ángulo (radianes)')
+        self.ax.set_ylabel('Distancia (metros)')
+        self.ax.set_title('Escaneo láser')
+        plt.draw()
+        plt.pause(0.01)
 
 def main(args=None):
     rclpy.init(args=args)

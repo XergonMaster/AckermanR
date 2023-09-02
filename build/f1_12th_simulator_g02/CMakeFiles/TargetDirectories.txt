@@ -1,9 +1,0 @@
-/home/santiago/RoboticaMovil/ros_ws_2302/src/build/f1_12th_simulator_g02/CMakeFiles/uninstall.dir
-/home/santiago/RoboticaMovil/ros_ws_2302/src/build/f1_12th_simulator_g02/CMakeFiles/f1_12th_simulator_g02_uninstall.dir
-/home/santiago/RoboticaMovil/ros_ws_2302/src/build/f1_12th_simulator_g02/CMakeFiles/test.dir
-/home/santiago/RoboticaMovil/ros_ws_2302/src/build/f1_12th_simulator_g02/CMakeFiles/edit_cache.dir
-/home/santiago/RoboticaMovil/ros_ws_2302/src/build/f1_12th_simulator_g02/CMakeFiles/rebuild_cache.dir
-/home/santiago/RoboticaMovil/ros_ws_2302/src/build/f1_12th_simulator_g02/CMakeFiles/list_install_components.dir
-/home/santiago/RoboticaMovil/ros_ws_2302/src/build/f1_12th_simulator_g02/CMakeFiles/install.dir
-/home/santiago/RoboticaMovil/ros_ws_2302/src/build/f1_12th_simulator_g02/CMakeFiles/install/local.dir
-/home/santiago/RoboticaMovil/ros_ws_2302/src/build/f1_12th_simulator_g02/CMakeFiles/install/strip.dir
