@@ -1,166 +1,164 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include <algorithm> // Para std::min_element
+#include <limits>    // Para std::numeric_limits
+#include <chrono>    // Para medir el tiempo
 
-class FollowTheGapNode : public rclcpp::Node
+class EmergencyBrakeNode : public rclcpp::Node
 {
 public:
-    FollowTheGapNode() : Node("follow_the_gap_node")
+    EmergencyBrakeNode() : Node("emergency_brake_node")
     {
-        this->declare_parameter("VEL_X", 0.3);
-        this->declare_parameter("MAX_THETA", 0.8);
-        this->declare_parameter("Kp", 0.8);  // Valor por defecto
-        this->declare_parameter("Kd", 8.90); // Valor por defecto
+        // Configurar la calidad de servicio (QoS) para "Best Effort"
+        rclcpp::QoS qos(10); // Cambia el número 10 según tus necesidades
+        qos.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+        odom_subscription_ = create_subscription<nav_msgs::msg::Odometry>(
+            "/car/odom", qos,
+            std::bind(&EmergencyBrakeNode::odomCallback, this, std::placeholders::_1));
 
-        VEL_X = this->get_parameter("VEL_X").as_double();
-        MAX_TETHA = this->get_parameter("MAX_THETA").as_double();
-        Kp = this->get_parameter("Kp").as_double();
-        Kd = this->get_parameter("Kd").as_double();
-        pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
-        sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            "/scan", 10, std::bind(&FollowTheGapNode::lidar_callback, this, std::placeholders::_1));
-        RCLCPP_INFO(this->get_logger(), "existo :D en forma de follow the Gap");
+        // Suscribirse al mensaje de escaneo láser
+        laser_subscription_ = create_subscription<sensor_msgs::msg::LaserScan>(
+            "scan", 10, std::bind(&EmergencyBrakeNode::laserCallback, this, std::placeholders::_1));
+
+        // Publicar mensajes Twist en el tópico cmd_EB
+        cmd_eb_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_EB", 10);
+
+        // Inicializar variables de recuperación
+        recovery_attempts_ = 0;
+        recovery_duration_ = std::chrono::seconds(5); // Duración de cada intento de recuperación
+        last_recovery_time_ = std::chrono::steady_clock::now();
     }
 
 private:
-    void lidar_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
+    void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
     {
-        double dt = this->get_clock()->now().seconds() - last_time_.seconds();
-
-        // int gap_start, gap_end;
-
-        // std::tie(gap_start, gap_end) = find_biggest_gap(msg->ranges, 180, 0.8);
-        float mid_gap = find_biggest_gap(msg->ranges, 180, 0.8);
-        mid_gap = mid_gap;
-        RCLCPP_INFO(this->get_logger(), "mid_gap: %.2f", mid_gap);
-
-        // int ref = round(msg->ranges.size() / 2);
-
-        int ref = 0;
-
-        double error = (ref - mid_gap);
-
-        double de = error - last_error_;
-        last_error_ = error;
-        double theta_d = Kp * error + Kd * de / dt;
-
-        geometry_msgs::msg::Twist cmd;
-        if (theta_d != 0)
-        {
-            theta_ant_ = theta_d / abs(theta_d) * MAX_TETHA;
-        }
-        else
-        {
-            theta_ant_ = 0;
-        }
-        cmd.angular.z = -theta_ant_;
-        cmd.linear.x = VEL_X;
-        pub_->publish(cmd);
+        // Guardar la velocidad lineal en una variable miembro
+        current_linear_velocity_ = msg->twist.twist.linear.x;
     }
 
-    float find_biggest_gap(const std::vector<float> &data, int skip_count, float v)
+    void laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
-        int size = data.size();
-        // Validar que el vector data no esté vacío y que skip_count sea menor o igual a la mitad del tamaño de data
-        if (data.empty() || skip_count > size / 2)
+        double angle_min_front = -7 * (M_PI / 180);
+        double angle_max_front = 7 * (M_PI / 180);
+
+        int index_min = round((angle_min_front - msg->angle_min) / msg->angle_increment);
+        int index_max = round((angle_max_front - msg->angle_min) / msg->angle_increment);
+
+        auto ranges = msg->ranges;
+
+        std::vector<float> resultado = obtenerRangoVector(ranges, index_min, index_max);
+        int nuevaLongitud = resultado.size();
+
+        // Inicializar la distancia mínima y el ángulo correspondiente con valores predeterminados
+        double min_distance = std::numeric_limits<double>::infinity();
+        double angle_min_value = 0.0;
+
+        // Verificar que nuevaLongitud sea mayor que 0
+        if (nuevaLongitud > 0)
         {
-            // Retornar un valor por defecto o manejar el error según tus necesidades
-            RCLCPP_WARN(this->get_logger(), "No hay datos en el vector");
-            return -1.0; // Puedes ajustar este valor por defecto o manejar el error de otra manera
-        }
-
-        int gap_start = 0;
-        int max_gap_start = 0;
-        int max_gap_size = 0;
-        int current_gap_size = 0;
-        int j = 1;
-
-        // Divide el vector en tres grupos: primero, segundo (que se omite) y tercero
-
-        float second_group_start = size / 2 - skip_count / 2;
-        float third_group_start = second_group_start + skip_count;
-        // RCLCPP_INFO(this->get_logger(), "l:%.2d p: %.2f s: %.2f ", size, second_group_start, third_group_start);
-
-        // Evaluar primero el tercer grupo
-        for (int i = third_group_start; i < size; ++i)
-        {
-            float value = data[i];
-            // Tratar valores infinitos como números muy grandes
-            if (std::isinf(value))
+            // Encontrar la distancia mínima y el ángulo correspondiente
+            for (int i = 0; i < nuevaLongitud; i++)
             {
-                value = 1000.0;
+                if (resultado[i] < min_distance)
+                {
+                    min_distance = resultado[i];
+                    angle_min_value = msg->angle_min + (index_min + i) * msg->angle_increment;
+                }
             }
 
-            if (value > v)
+            if (std::isinf(min_distance))
             {
-                if (current_gap_size == 0)
-                {
-                    gap_start = j;
-                }
-                current_gap_size++;
+                // La distancia mínima es infinita, no hay obstáculos detectados
+                RCLCPP_INFO(this->get_logger(), "No obstacles detected in front.");
             }
             else
             {
-                if (current_gap_size > max_gap_size)
-                {
-                    max_gap_size = current_gap_size;
-                    max_gap_start = gap_start;
-                }
-                current_gap_size = 0;
-            }
-            j++;
-        }
-        // Evaluar luego el primer grupo
-        for (int i = 0; i < second_group_start; ++i)
-        {
-            float value = data[i];
-            // Tratar valores infinitos como números muy grandes
-            if (std::isinf(value))
-            {
-                value = 1000.0;
-            }
+                double range_rate = current_linear_velocity_ * std::cos(angle_min_value);
+                double TTC = 0.0;
 
-            if (value > v && i != second_group_start - 1)
-            {
-                if (current_gap_size == 0)
+                if (range_rate != 0.0)
                 {
-                    gap_start = j;
+                    TTC = std::abs(min_distance / range_rate);
                 }
-                current_gap_size++;
-            }
-            else
-            {
-                if (current_gap_size > max_gap_size)
+                else
                 {
-                    max_gap_size = current_gap_size;
-                    max_gap_start = gap_start;
+                    TTC = std::numeric_limits<double>::infinity();
                 }
-                current_gap_size = 0;
-            }
-            j++;
-        }
 
-        current_gap_size = 0;
-        double mid_gap = max_gap_start + max_gap_size / 2;
-        double gap_base_scalin = (size - skip_count) / 2;
-        return (mid_gap - gap_base_scalin);
+                if (TTC < 3.0)
+                {
+                    RCLCPP_WARN(this->get_logger(), "Obstacle detected in front! Distance: %.2f m, TTC: %.2f s", min_distance, TTC);
+
+                    // Verificar si se debe iniciar un intento de recuperación
+                    auto current_time = std::chrono::steady_clock::now();
+                    if (recovery_attempts_ < max_recovery_attempts_ &&
+                        current_time - last_recovery_time_ > recovery_duration_)
+                    {
+                        initiateRecovery();
+                    }
+                    else
+                    {
+                        // Detener el vehículo si no se pueden realizar más intentos de recuperación
+                        geometry_msgs::msg::Twist stop_msg;
+                        stop_msg.linear.x = 0.0;
+                        stop_msg.linear.y = 0.0;
+                        stop_msg.angular.z = 0.0;
+                        cmd_eb_publisher_->publish(stop_msg);
+                    }
+                }
+            }
+        }
     }
 
-    rclcpp::Time last_time_ = this->get_clock()->now();
-    double theta_ant_;
-    double last_error_ = 0;
-    double VEL_X = 0.3;
-    double MAX_TETHA = 0.8;
-    double Kp = 0.8;   // Adjust as needed
-    double Kd = 3.212; // Adjust as needed
-    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
-    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub_;
+    // Función para iniciar un intento de recuperación
+    void initiateRecovery()
+    {
+        RCLCPP_WARN(this->get_logger(), "Initiating recovery attempt %d", recovery_attempts_);
+        geometry_msgs::msg::Twist recovery_msg;
+
+        // Hacer que el vehículo retroceda durante 2 segundos (ajusta el tiempo según tus necesidades)
+        auto start_time = std::chrono::steady_clock::now();
+        auto current_time = start_time;
+
+        while (std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count() < 2)
+        {
+            recovery_msg.linear.x = -1.0;  // Velocidad lineal negativa para retroceder
+            recovery_msg.linear.y = 0.0;
+            recovery_msg.angular.z = 0.0;
+            cmd_eb_publisher_->publish(recovery_msg);
+
+            rclcpp::spin_some(node);  // Procesar mensajes para evitar bloqueos
+            rclcpp::sleep_for(std::chrono::milliseconds(100));  // Pequeña pausa
+            current_time = std::chrono::steady_clock::now();
+        }
+
+        // Detener el vehículo después de retroceder
+        recovery_msg.linear.x = 0.0;
+        cmd_eb_publisher_->publish(recovery_msg);
+
+        // Actualizar el tiempo del último intento de recuperación
+        last_recovery_time_ = std::chrono::steady_clock::now();
+        recovery_attempts_++;
+    }
+
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscription_;
+    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_subscription_;
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_eb_publisher_;
+
+    double current_linear_velocity_ = 0.0;           // Variable para almacenar la velocidad lineal actual
+    int recovery_attempts_ = 0;                      // Número de intentos de recuperación realizados
+    int max_recovery_attempts_ = 5;                  // Número máximo de intentos de recuperación
+    std::chrono::steady_clock::duration recovery_duration_; // Duración de cada intento de recuperación
+    std::chrono::steady_clock::time_point last_recovery_time_; // Tiempo del último intento de recuperación
 };
 
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<FollowTheGapNode>());
+    auto node = std::make_shared<EmergencyBrakeNode>();
+    rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
 }

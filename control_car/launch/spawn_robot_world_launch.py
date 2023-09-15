@@ -36,11 +36,11 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument(
-            'world',
-            default_value=[os.path.join(
-                pkg_control_car, 'world', 'Mapa1'), ''],
-            description='SDF world file'),
+        # DeclareLaunchArgument(
+        #     'world',
+        #     default_value=[os.path.join(
+        #         pkg_control_car, 'world', 'Parcial_World1.world'), ''],
+        #     description='SDF world file'),
         gazebo,
         car,
         cmd_vel_mux,

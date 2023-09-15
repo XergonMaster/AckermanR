@@ -17,6 +17,7 @@ public:
         subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
             "/scan", 10, std::bind(&WallFollowing::scan_callback, this, std::placeholders::_1));
         publisher_ = this->create_publisher<std_msgs::msg::Float32>("/error", 10);
+        publisher_dist = this->create_publisher<std_msgs::msg::Float32>("/dist_wall", 10);
     }
 
 private:
@@ -57,11 +58,16 @@ private:
         std_msgs::msg::Float32 error_msg;
         error_msg.data = error;
         publisher_->publish(error_msg);
+
+        std_msgs::msg::Float32 dist_wall_msg;
+        dist_wall_msg.data = CD;
+        publisher_dist->publish(dist_wall_msg);
     }
     double DIS_WALL=2.0;
     double SAFETY_DISTANCE=2.0;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_dist;
 
 };
 
