@@ -1,0 +1,9 @@
+follow_the_gap_node:
+  ros__parameters:
+    VEL_X: 0.5
+    MAX_THETA: 0.6
+    Kp: 2.157
+    Kd: 9.585
+    Switch: 1.0
+    Ki: 0.5
+    OUT_RANGE: 240

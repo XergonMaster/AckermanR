@@ -1,9 +1,9 @@
 control_node:
   ros__parameters:
-    VEL_X: 0.3
+    VEL_X: 0.5
     MAX_THETA: 0.6
-    Kp: 2.157
-    Kd: 9.585
+    Kp: 1.657
+    Kd: 7.585
     DIS_WALL: 0.3
 
 wall_following_node:

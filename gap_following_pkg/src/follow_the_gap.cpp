@@ -13,6 +13,7 @@ public:
         this->declare_parameter("Kd", 8.90); // Valor por defecto
         this->declare_parameter("Switch", 1.0);
         this->declare_parameter("Ki", 0.5);
+        this->declare_parameter("OUT_RANGE", 240);
 
         Switch = this->get_parameter("Switch").as_double();
         VEL_X = this->get_parameter("VEL_X").as_double();
@@ -20,6 +21,7 @@ public:
         Kp = this->get_parameter("Kp").as_double();
         Kd = this->get_parameter("Kd").as_double();
         Ki = this->get_parameter("Ki").as_double();
+        OUT_RANGE = this->get_parameter("OUT_RANGE").as_int();
         pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
         sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
             "/scan", 10, std::bind(&FollowTheGapNode::lidar_callback, this, std::placeholders::_1));
@@ -34,7 +36,7 @@ private:
         // int gap_start, gap_end;
 
         // std::tie(gap_start, gap_end) = find_biggest_gap(msg->ranges, 180, 0.8);
-        float mid_gap = find_biggest_gap(msg->ranges, 240, 0.8);
+        float mid_gap = find_biggest_gap(msg->ranges, OUT_RANGE, 0.8);
         mid_gap = mid_gap;
         RCLCPP_INFO(this->get_logger(), "mid_gap: %.2f", mid_gap);
 
@@ -169,6 +171,7 @@ private:
     double Kd = 3.212; // Adjust as needed
     double Ki = 0.5;
     double p_radar=30;
+    int OUT_RANGE = 240;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub_;
 };
