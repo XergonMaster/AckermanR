@@ -104,15 +104,21 @@ private:
                 {
                     RCLCPP_WARN(this->get_logger(), "Obstacle detected in front! Distance: %.2f m, TTC: %.2f s", min_distance, TTC);
 
-                    // Verificar si ha pasado suficiente tiempo desde el último intento de recuperación
-                    auto current_time = std::chrono::steady_clock::now();
-                    auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(current_time - last_recovery_time_);
+                    geometry_msgs::msg::Twist recovery_msg;
+                    recovery_msg.linear.x = 0.0;
+                    recovery_msg.linear.y = 0.0;
+                    recovery_msg.angular.z = 0.0;
+                    cmd_eb_publisher_->publish(recovery_msg);
 
-                    if (elapsed_time >= min_recovery_interval_)
-                    {
-                        // Iniciar un intento de recuperación
-                        initiateRecovery();
-                    }
+                    // // Verificar si ha pasado suficiente tiempo desde el último intento de recuperación
+                    // auto current_time = std::chrono::steady_clock::now();
+                    // auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(current_time - last_recovery_time_);
+
+                    // if (elapsed_time >= min_recovery_interval_)
+                    // {
+                    //     // Iniciar un intento de recuperación
+                    //     initiateRecovery();
+                    // }
                 }
             }
         }
