@@ -19,13 +19,13 @@ ament_target_dependencies(wall_following_node rclcpp sensor_msgs std_msgs)
 add_executable(control_node src/control_node.cpp)
 ament_target_dependencies(control_node rclcpp std_msgs geometry_msgs)
 
-add_executable(follow_gap src/follow_gap.cpp)
-ament_target_dependencies(follow_gap rclcpp geometry_msgs sensor_msgs)
+# add_executable(follow_gap src/follow_gap.cpp)
+# ament_target_dependencies(follow_gap rclcpp geometry_msgs sensor_msgs)
 
 install(TARGETS
   wall_following_node
   control_node
-  follow_gap
+  # follow_gap
   DESTINATION lib/${PROJECT_NAME}
 )
 
